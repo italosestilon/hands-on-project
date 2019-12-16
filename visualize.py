@@ -52,6 +52,8 @@ def get_output_by_layer(model, x):
   #transform features to a 2D tensor
   x = x.flatten(start_dim=1)
   for layer_name, layer in model.classifier.named_children():
+    if layer_name == "decision":
+      continue
     #do forward through the layer   
     x = layer.forward(x)
     #save the output

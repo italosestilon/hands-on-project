@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from collections import OrderedDict
+
 import math
 
 #extends Module to define our very simple neural network
@@ -10,23 +12,23 @@ class Net(nn.Module):
     super(Net, self).__init__()
 
     #defining feature extractor
-    self.feature_extractor = nn.Sequential(
+    self.feature_extractor = nn.Sequential(OrderedDict([
         #defining convolutional layer
-        nn.Conv2d(1, 32, kernel_size=(3, 3), stride=1, padding=1, bias=True),
+        ("conv", nn.Conv2d(1, 32, kernel_size=(3, 3), stride=1, padding=1, bias=True)),
         #defining activation layer
-        nn.ReLU(),
+        ("relu", nn.ReLU()),
         #defining pooling layer
-        nn.MaxPool2d(kernel_size=(3, 3), stride=2)
+        ("pool", nn.MaxPool2d(kernel_size=(3, 3), stride=2))])
     )
 
     #defining classifier
-    self.classifier = nn.Sequential(
+    self.classifier = nn.Sequential(OrderedDict([
         #defining a linear layer that reduces from 5408 features to 4096 features
-        nn.Linear(5408, 4096),
+        ("linear", nn.Linear(5408, 4096)),
         #defining activation layer
-        nn.ReLU(),
+        ("relu2", nn.ReLU()),
         #defining linear layer as decision layer
-        nn.Linear(4096, num_classes),
+        ("decision", nn.Linear(4096, num_classes))])
     )
 
     #initialize weights
