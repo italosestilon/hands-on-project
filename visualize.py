@@ -34,32 +34,47 @@ def get_device():
 def load_model(filename, model):
     model.load_state_dict(torch.load(filename), strict=True)
 
+#function to get the output of each layer
 def get_output_by_layer(model, x):
+  #empty dict
   output_by_layer = OrderedDict()
   
+  #get the input
   output_by_layer['input'] = x.clone().detach().cpu().data.numpy()
-  for layer_name, layer in model.features.named_children():
-      if isinstance(layer, nn.Linear):
-          x = x.flatten(start_dim=1)
-      x = layer.forward(x)
-      output_by_layer[layer_name] = x.clone().detach().cpu().numpy()
 
+  #for each layer of the feature extractor
+  for layer_name, layer in model.feature_extractor.named_children():
+    #do forward through the layer
+    x = layer.forward(x)
+    #save the output
+    output_by_layer[layer_name] = x.clone().detach().cpu().numpy()
+  
+  #transform features to a 2D tensor
   x = x.flatten(start_dim=1)
-  for layer_name, layer in model.classifier.named_children():   
-      x = layer.forward(x)
-      output_by_layer["classifier-"+layer_name] = x.clone().detach().cpu().numpy()
-      
+  for layer_name, layer in model.classifier.named_children():
+    #do forward through the layer   
+    x = layer.forward(x)
+    #save the output
+    output_by_layer["classifier-"+layer_name] = x.clone().detach().cpu().numpy()
+  
+  #return output by layer
   return output_by_layer
 
-def createOutputsVisualization(model, dataload, device):
+#get the outputs, and labels
+def get_ouputs(model, dataload, device):
   outputs_by_layer = None
   all_labels = None
 
+  #get a batch from the dataload
   for inputs, labels in dataload:
+    #move inputs to the correct device
     inputs = inputs.to(device)
     labels = labels.clone().detach().cpu().numpy()
+
+    #get outputs by layer
     outputs = get_output_by_layer(model, inputs)
 
+    #save the outputs
     if outputs_by_layer is None:
       outputs_by_layer = outputs
       all_labels = labels
@@ -119,7 +134,7 @@ def main():
     reducer = umap.UMAP()
     #reducer = TSNE(perplexity=50)
 
-    output_by_layer, all_labels = createOutputsVisualization(model, visload, device)
+    output_by_layer, all_labels = get_ouputs(model, visload, device)
     projection_by_layer = projection(output_by_layer, reducer)
 
     create_visualization(projection_by_layer, all_labels)

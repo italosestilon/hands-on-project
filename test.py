@@ -27,7 +27,9 @@ def load_model(filename, model):
     model.load_state_dict(torch.load(filename), strict=True)
 
 
+#defining testing loop
 def test(model, testload, criterion, device):
+  #put model in evaluation mode
   model.eval()
 
   running_loss = 0.0
@@ -36,17 +38,24 @@ def test(model, testload, criterion, device):
 
   number_of_batches = len(testload)
   
+  #get a batch
   for batch_index, data in enumerate(testload, 0):
     inputs, labels = data
+
+    #mode data to the correct device
     inputs, labels = inputs.to(device), labels.to(device)
     
+    #deactivate gradients computation
     with torch.no_grad():
+
+      #do forward through model
       outputs = model(inputs)
 
+      #calculate loss
       loss = criterion(outputs, labels)
       
+      #accumulate information to calculate accuracy
       preds = torch.max(outputs, 1)[1]
-
       running_loss += loss.item()*inputs.size(0)
       running_corrects += torch.sum(preds == labels.data)
       n += outputs.size(0)

@@ -17,12 +17,14 @@ def load_dataset(transform):
 
     return trainset, testset
 
+#defining training loop
 def train(model, trainload, criterion, optimizer, lr_scheduler, epochs, device):
+  #put model in train model
   model.train()
   
   for epoch in range(epochs):
-    print('Epoch {}/{}'.format(epoch, epochs - 1))
     print('-' * 20)
+    print('Epoch {}/{}'.format(epoch, epochs - 1))
 
     running_loss = 0.0
     running_corrects = 0.0
@@ -30,27 +32,39 @@ def train(model, trainload, criterion, optimizer, lr_scheduler, epochs, device):
 
     number_of_batches = len(trainload)
     
+    #get a batch
     for batch_index, data in enumerate(trainload, 0):
-      inputs, labels = data
-      inputs, labels = inputs.to(device), labels.to(device)
-      
-      optimizer.zero_grad()
+        inputs, labels = data
+        #move data to the correct device
+        inputs, labels = inputs.to(device), labels.to(device)
+        
+        #zero gradients
+        optimizer.zero_grad()
 
-      outputs = model(inputs)
+        #do forward through the neural network
+        outputs = model(inputs)
 
-      loss = criterion(outputs, labels)
-      
-      preds = torch.max(outputs, 1)[1]
-      
-      loss.backward()
-      optimizer.step()
+        #compute the loss
+        loss = criterion(outputs, labels)
+        
+        #compute gradients
+        loss.backward()
 
-      running_loss += loss.item()*inputs.size(0)
-      running_corrects += torch.sum(preds == labels.data)
-      n += outputs.size(0)
+        #update weights
+        optimizer.step()
+
+        #accumulate information to calculate accuracy
+        preds = torch.max(outputs, 1)[1]
+        running_loss += loss.item()*inputs.size(0)
+        running_corrects += torch.sum(preds == labels.data)
+        n += outputs.size(0)
+
+        print("\rBatch {}/{}".format(batch_index, number_of_batches))
     
     epoch_loss = running_loss/n
     epoch_acc = running_corrects.double()/n
+
+    #count epochs
     lr_scheduler.step()
     
     print()

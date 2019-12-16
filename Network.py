@@ -3,48 +3,63 @@ import torch.nn as nn
 
 import math
 
+#extends Module to define our very simple neural network
 class Net(nn.Module):
 
   def __init__(self, num_classes):
     super(Net, self).__init__()
 
-    self.features = nn.Sequential(
-        nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1, bias=True),
-        nn.ReLU(inplace=True),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-
-        nn.Conv2d(32, 64, kernel_size=5, stride=1, padding=2),
-        nn.ReLU(inplace=True),
-        nn.MaxPool2d(kernel_size=2, stride=2),
-
-        nn.Conv2d(64, 64, kernel_size=5, stride=1, padding=2),
-        nn.ReLU(inplace=True),
-        nn.MaxPool2d(kernel_size=2, stride=2)
+    #defining feature extractor
+    self.feature_extractor = nn.Sequential(
+        #defining convolutional layer
+        nn.Conv2d(1, 32, kernel_size=(3, 3), stride=1, padding=1, bias=True),
+        #defining activation layer
+        nn.ReLU(),
+        #defining pooling layer
+        nn.MaxPool2d(kernel_size=(3, 3), stride=2)
     )
 
+    #defining classifier
     self.classifier = nn.Sequential(
-        nn.Linear(576, 4096),
-        nn.ReLU(inplace=True),
-        nn.Linear(4096, 4096),
-        nn.ReLU(inplace=True),
+        #defining a linear layer that reduces from 5408 features to 4096 features
+        nn.Linear(5408, 4096),
+        #defining activation layer
+        nn.ReLU(),
+        #defining linear layer as decision layer
         nn.Linear(4096, num_classes),
     )
 
+    #initialize weights
     self._initialize_weights()
 
   def forward(self, x):
-      x = self.features(x)
-      x = torch.flatten(x, 1)
+      #extracts features
+      x = self.feature_extractor(x)
+      #transforms outputs into a 2D tensor
+      x = torch.flatten(x, start_dim=1)
+      #classifies patterns
       y = self.classifier(x)
+  
       return y
   
   def _initialize_weights(self):
+    #for each submodule of our network
     for m in self.modules():
         if isinstance(m, nn.Conv2d):
+            #get the number of elements in the layer weights
             n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-            m.weight.data.normal_(0, math.sqrt(2. / n))
+
+            #initialize layer weights with random values generated from a normal
+            #distribution with mean = 0 and std = sqrt(2. / n))
+            m.weight.data.normal_(mean=0, std=math.sqrt(2. / n))
+
             if m.bias is not None:
+                #initialize bias with 0 (why?)
                 m.bias.data.zero_()
         elif isinstance(m, nn.Linear):
-            m.weight.data.normal_(0, 0.01)
+            #initialize layer weights with random values generated from a normal
+            #distribution with mean = 0 and std = 1/100
+            m.weight.data.normal_(mean=0, std=0.01)
+
+            #initialize bias with 0 (why?)
             m.bias.data.zero_()
